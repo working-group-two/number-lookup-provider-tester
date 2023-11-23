@@ -1,74 +1,48 @@
 package main
 
 import (
+	"context"
+	"flag"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/working-group-two/number-lookup-provider-tester/internal/server"
 	"os"
+	"os/signal"
+	"strings"
 )
-
-const (
-	flagPort           = "port"
-	flagRps            = "rps"
-	flagPrintRequests  = "print-requests"
-	flagPrintResponses = "print-responses"
-	flagPrintProgress  = "print-progress"
-	flagPhoneNumber    = "phone-number"
-)
-
-var cmd = &cobra.Command{
-	Use:   "number-lookup",
-	Short: "Number Lookup Provider Tester",
-	Run: func(cmd *cobra.Command, args []string) {
-		port, _ := cmd.Flags().GetInt(flagPort)
-		rps, _ := cmd.Flags().GetUint32(flagRps)
-		phoneNumber, _ := cmd.Flags().GetStringSlice(flagPhoneNumber)
-		requireFlag(cmd, flagPort)
-		requireFlag(cmd, flagRps)
-		requireFlag(cmd, flagPhoneNumber)
-
-		printRequests, _ := cmd.Flags().GetBool(flagPrintRequests)
-		printResponses, _ := cmd.Flags().GetBool(flagPrintResponses)
-		printProgress, _ := cmd.Flags().GetBool(flagPrintProgress)
-
-		printOptions := &server.PrintOptions{
-			Requests:  printRequests,
-			Responses: printResponses,
-			Progress:  printProgress,
-		}
-
-		listener := fmt.Sprintf(":%d", port)
-
-		server.Start(
-			listener,
-			rps,
-			phoneNumber,
-			printOptions,
-		)
-	},
-}
-
-func init() {
-	cmd.Flags().Int(flagPort, 0, "Port to run the application on")
-	cmd.Flags().Uint32(flagRps, 0, "Requests per second")
-	cmd.Flags().StringSlice(flagPhoneNumber, []string{}, "Phone number to use in requests")
-
-	cmd.Flags().Bool(flagPrintRequests, false, "Print requests")
-	cmd.Flags().Bool(flagPrintResponses, false, "Print responses")
-	cmd.Flags().Bool(flagPrintProgress, false, "Print progress")
-}
-
-func requireFlag(cmd *cobra.Command, flagName string) {
-	if cmd.Flags().Changed(flagName) == false {
-		cmd.Help()
-		fmt.Printf("\nflag is required: --%s\n", flagName)
-		os.Exit(1)
-	}
-}
 
 func main() {
-	if err := cmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
+	var (
+		address        = flag.String("address", "127.0.0.1:8118", "address to listen on")
+		rps            = flag.Int64("rps", 16, "request per second")
+		numbers        = flag.String("numbers", "", "comma separated list of phone numbers")
+		printRequests  = flag.Bool("print-requests", false, "print requests")
+		printResponses = flag.Bool("print-responses", false, "print responses")
+		printProgress  = flag.Bool("print-progress", false, "print progress")
+	)
+	flag.Parse()
+
+	if *numbers == "" {
+		fmt.Println("missing param -numbers")
 		os.Exit(1)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	sigC := make(chan os.Signal, 1)
+	signal.Notify(sigC, os.Interrupt)
+	go func() {
+		<-sigC
+		cancel()
+	}()
+
+	startServer(
+		ctx,
+		*address,
+		*rps,
+		strings.Split(*numbers, ","),
+		&printOptions{
+			Requests:  *printRequests,
+			Responses: *printResponses,
+			Progress:  *printProgress,
+		},
+	)
 }
