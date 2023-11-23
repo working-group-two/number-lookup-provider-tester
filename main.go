@@ -21,7 +21,8 @@ func main() {
 	flag.Parse()
 
 	if *numbers == "" {
-		fmt.Println("missing param -numbers")
+		flag.Usage()
+		fmt.Fprint(os.Stderr, "\n  Missing parameter: -numbers\n")
 		os.Exit(1)
 	}
 
