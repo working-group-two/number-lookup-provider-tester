@@ -11,7 +11,7 @@ import (
 
 func main() {
 	var (
-		address        = flag.String("address", "127.0.0.1:8118", "address to listen on")
+		address        = flag.String("address", ":8118", "address to listen on")
 		rps            = flag.Int64("rps", 16, "request per second")
 		numbers        = flag.String("numbers", "", "comma separated list of phone numbers")
 		printRequests  = flag.Bool("print-requests", false, "print requests")
