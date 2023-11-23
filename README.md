@@ -31,29 +31,28 @@ It does not limit number of in-flight requests.
 ## Usage
 
 ```
-Number Lookup Provider Tester
-
 Usage:
-  number-lookup [flags]
-
-Flags:
-  -h, --help                   help for number-lookup
-      --phone-number strings   Phone number to use in requests
-      --port int               Port to run the application on
-      --print-progress         Print progress
-      --print-requests         Print requests
-      --print-responses        Print responses
-      --rps uint32             Requests per second
+  -address string
+    	address to listen on (default "127.0.0.1:8118")
+  -numbers string
+    	comma separated list of phone numbers
+  -print-progress
+    	print progress
+  -print-requests
+    	print requests
+  -print-responses
+    	print responses
+  -rps int
+    	request per second (default 16)
 ```
 
 ### Example
 
 ```
 go run main.go \
-  --port 8080 \
+  --address 127.0.0.1:8080 \
   --rps 5 \
-  --phone-number 4799990001 \
-  --phone-number 4799990002,4799990003 \
+  --numbers 4799990001,4799990002,4799990003 \
   --print-progress \
   --print-requests \
   --print-responses
