@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"io"
 	"log/slog"
 	"math/rand"
 	"net"
@@ -34,16 +33,12 @@ func (s *grpcServer) NumberLookup(stream pb.NumberLookupService_NumberLookupServ
 	// Read messages from the stream:
 	responses := make(chan *pb.NumberLookupResponse)
 	defer close(responses)
-	errC := make(chan error)
-	defer close(errC)
 	go func() {
 		for {
 			response, err := stream.Recv()
-			if err != nil {
-				errC <- err
-				return
+			if err == nil {
+				responses <- response
 			}
-			responses <- response
 		}
 	}()
 
@@ -66,13 +61,6 @@ func (s *grpcServer) NumberLookup(stream pb.NumberLookupService_NumberLookupServ
 		// stream closed, return
 		case <-ctx.Done():
 			return ctx.Err()
-
-		// error receiving responses, return
-		case err := <-errC:
-			if err == io.EOF {
-				return nil
-			}
-			return err
 
 		// print responses as they arrive
 		case response := <-responses:
